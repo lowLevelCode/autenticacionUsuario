@@ -63,7 +63,7 @@ createConnections(
 
 ).then(async connection => {
     let ip = "0.0.0.0";
-    let port= 3000;
+    let port= 3002;
 
     // create express app
     const app = express();
