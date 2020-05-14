@@ -30,8 +30,8 @@ export class AutenticacionUsuarioController {
             let consultarMenorQueryRep =  null;
             let cuotaDiariaQueryRep =  null;
 
-            let statusconQueryRep = await this.aforecoppelCom.query(`SELECT estatus FROM sis_estatusconexiontester;`);            
-            let [{tipoaccesoqueryrep}] = await this.aforecoppelCom.query(`SELECT * FROM fnTipoAcceso('${access_token}', 1) as tipoaccesoqueryrep;`);            
+            let statusconQueryRep = await this.aforecoppelCom.query(`SELECT estatus FROM sis_estatusconexiontester;`);               
+            let [{tipoaccesoqueryrep}] = await this.aforecoppelCom.query(`SELECT * FROM fnTipoAcceso('${access_token}', 1) as tipoaccesoqueryrep;`);                                    
 
             // apunta a otra base de datos
             let [{current_date}]  = await this.aforeglobal.query(`SELECT NOW()::DATE as current_date;`);    
@@ -50,6 +50,7 @@ export class AutenticacionUsuarioController {
             let formatDate = [year, month, day].join('-') + " 23:59:00";            
 
             let [{fecha}] = await this.aforeglobal.query(`SELECT * FROM fnobtenerdiahabil(CURRENT_DATE, 2) as fecha;`);                
+            //let fecha = "2012-12-12"; 
 
 
             // generemos el token            
@@ -59,23 +60,22 @@ export class AutenticacionUsuarioController {
 
             // tipo acceso trae 1 ejeucatr usuario movil si es diferente esjecutar la normal
             if(tipoaccesoqueryrep == 1) // para movil
-            {
+            {                
+
                 let tempqueryrep = await this.aforecoppelCom.query(`
-                    SELECT curp, codPais, telefono, TRIM(correo) AS correo, TRIM(usuario) AS usuario, '' AS password, respuesta, tipocambiocontrasenia, estatusCorreo, 
-                    TRIM(nombre), TRIM(apellidopat), TRIM(apellidomat), TRIM(nss)
-                    FROM fnautentificarusuarioMovil('${access_token}','${tokenUser}','${usuario}','${contrasena}', '${fecha}')
-                     as tempqueryrep;`
-                );                  
+                SELECT curp, codPais, telefono, TRIM(correo) AS correo, TRIM(usuario) AS usuario, '' AS password, respuesta, tipocambiocontrasenia, estatusCorreo, 
+                TRIM(nombre), TRIM(apellidopat), TRIM(apellidomat), TRIM(nss)
+                FROM fnautentificarusuarioMovil('${access_token}','${tokenUser}','${usuario}','${contrasena}', '${fecha}')
+                 as tempqueryrep;`);                  
 
                 autenticarUsuarioQueryRep = tempqueryrep[0];
             }
             else{     //           
-
+                
                 let tempqueryrep = await this.aforecoppelCom.query(`
-                    SELECT curp, codPais, telefono, TRIM(correo) AS correo, TRIM(usuario) AS usuario, '' AS password, 
-                    respuesta, tipocambiocontrasenia, estatusCorreo
-                    FROM fnautentificarusuario('${access_token}','${tokenUser}','${usuario}','${contrasena}', '${fecha}') as tempqueryrep;`
-                );                  
+                SELECT curp, codPais, telefono, TRIM(correo) AS correo, TRIM(usuario) AS usuario, '' AS password, 
+                respuesta, tipocambiocontrasenia, estatusCorreo, '' AS nombre
+                FROM fnautentificarusuario('${access_token}','${tokenUser}','${usuario}','${contrasena}', '${fecha}') as tempqueryrep;`);                  
 
                 autenticarUsuarioQueryRep = tempqueryrep[0];
             }
@@ -96,33 +96,47 @@ export class AutenticacionUsuarioController {
 			let shTipo = 0;
 
 			if(autenticarUsuarioQueryRep.respuesta == 1){
-				cuotaDiariaQueryRep = await this.aforecoppelCom.query(`
+				cuotaDiariaQueryRep = await this.aforeglobal.query(`
                     SELECT TRIM(paterno) AS paterno, TRIM(materno) AS materno, TRIM(nombres) AS nombres 
-                    FROM afop_cuota_diaria WHERE n_unico = '${autenticarUsuarioQueryRep.curp}';`
+                    FROM afop_cuota_diaria WHERE n_unico = '${autenticarUsuarioQueryRep.curp}a';`
                 );                 
                 
-                nombre = cuotaDiariaQueryRep[0].nombre;
-                paterno = cuotaDiariaQueryRep[0].paterno;
-                materno = cuotaDiariaQueryRep[0].materno;
-				if(nombre == '' || paterno == '' || materno == ''){
-					shRet = 500;
+                if(cuotaDiariaQueryRep[0])
+                {
+                    nombre = cuotaDiariaQueryRep[0].nombres ? cuotaDiariaQueryRep[0].nombres : '';
+                    paterno = cuotaDiariaQueryRep[0].paterno ? cuotaDiariaQueryRep[0].paterno : '';
+                    materno = cuotaDiariaQueryRep[0].materno ? cuotaDiariaQueryRep[0].materno : '';
+
+                    shRet = 200;
 					shTipo = 0;
-				}
-				else{
-					shRet = 200;
+                }
+                else{
+                    shRet = 500;
 					shTipo = 0;
-				}
+                }
+                
 			}
             else if(autenticarUsuarioQueryRep.respuesta == 10 || autenticarUsuarioQueryRep.respuesta == 11 || autenticarUsuarioQueryRep.respuesta == 13 || autenticarUsuarioQueryRep.respuesta == -8 || autenticarUsuarioQueryRep.respuesta == -102 || autenticarUsuarioQueryRep.respuesta == -103)
             {
-				cuotaDiariaQueryRep = await this.aforecoppelCom.query(`
+				cuotaDiariaQueryRep = await this.aforeglobal.query(`
                     SELECT TRIM(paterno) AS paterno, TRIM(materno) AS materno, TRIM(nombres) AS nombres 
-                    FROM afop_cuota_diaria WHERE n_unico = '${autenticarUsuarioQueryRep.curp}';`
+                    FROM afop_cuota_diaria WHERE n_unico = '${autenticarUsuarioQueryRep.curp}a';`
                 );                 
                 
-                nombre = cuotaDiariaQueryRep[0].nombre;
-                paterno = cuotaDiariaQueryRep[0].paterno;
-                materno = cuotaDiariaQueryRep[0].materno;
+
+                if(cuotaDiariaQueryRep[0])
+                {
+                    nombre = cuotaDiariaQueryRep[0].nombres ? cuotaDiariaQueryRep[0].nombres : '';
+                    paterno = cuotaDiariaQueryRep[0].paterno ? cuotaDiariaQueryRep[0].paterno : '';
+                    materno = cuotaDiariaQueryRep[0].materno ? cuotaDiariaQueryRep[0].materno : '';
+
+                    shRet = 200;
+					shTipo = 0;
+                }
+                else{
+                    shRet = 500;
+					shTipo = 0;
+                }
 				
 				if(autenticarUsuarioQueryRep.respuesta == 10)
 				{
@@ -195,8 +209,17 @@ export class AutenticacionUsuarioController {
             }
             
             let [{mensaje}] = await this.aforecoppelCom.query(`SELECT * FROM fnObtenerMensaje(${shRet}, ${shTipo}, 0) as mensaje;`);            
-            
-            
+                           
+            // reemplazamos caracteres extraños
+            if(mensaje)
+            {
+                mensaje  = mensaje.replace(/&aacute;/g, 'á');
+                mensaje  = mensaje.replace(/&eacute;/g ,'é');
+                mensaje  = mensaje.replace(/&iacute;/g , 'í');
+                mensaje  = mensaje.replace(/&oacute;/g, 'ó');
+                mensaje  = mensaje.replace(/&uacute;/g, 'ú');
+            }            
+
             let respuesta = {   
                 status:shRet,
                 mensaje:mensaje,
@@ -224,6 +247,7 @@ export class AutenticacionUsuarioController {
                 }
             };            
 
+            console.log(respuesta);
             return respuesta;
 
         } catch (error) {
