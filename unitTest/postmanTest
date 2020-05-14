@@ -1,0 +1,10 @@
+POST http://localhost:3002/autenticarUsuario
+
+headers: Content-Type application/json
+
+raw data body:
+{
+	"usuario":"jvelizvidales@gmail.com",
+	"contrasena":"Qwerty1234",
+	"access_token":"asd.asd.asd"
+}
